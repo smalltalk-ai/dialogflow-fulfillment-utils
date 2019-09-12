@@ -2,7 +2,7 @@
 # dialogflow-fulfillment-utils
 [![npm](https://img.shields.io/npm/v/dialogflow-fulfillment-utils.svg)](https://www.npmjs.com/package/dialogflow-fulfillment-utils)
 
-Utility lib for handling with Dialogflow (formerly api.ai) fulfillment messages
+Utility lib for handling Dialogflow [`/query`](https://dialogflow.com/docs/reference/agent/query#get_and_post_responses) [Response object's](https://dialogflow.com/docs/reference/agent/query#get_and_post_responses) `filfillment` object
 
 ## Installation
 
