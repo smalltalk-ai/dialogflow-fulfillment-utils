@@ -1,0 +1,31 @@
+{
+  "name": "dialogflow-fulfillment-utils",
+  "version": "0.5.0",
+  "description": "Utilities for working with Dialogflow (formerly api.ai) fulfillment messages",
+  "main": "index.js",
+  "scripts": {
+    "test": "nyc --reporter=html --reporter=text mocha --require co-mocha ./**/*.spec.js",
+    "test-watch": "mocha --watch --require co-mocha ./**/*.spec.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smalltalk-ai/dialogflow-fulfillment-utils.git"
+  },
+  "keywords": [
+    "dialogflow",
+    "api.ai"
+  ],
+  "author": "Joshua Salwen <contact@smalltalk.ai> (https://www.smalltalk.ai)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/smalltalk-ai/dialogflow-fulfillment-utils/issues"
+  },
+  "homepage": "https://github.com/smalltalk-ai/dialogflow-fulfillment-utils#readme",
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "co-mocha": "^1.2.1",
+    "mocha": "^4.1.0",
+    "nyc": "^11.4.1"
+  },
+  "dependencies": {}
+}
