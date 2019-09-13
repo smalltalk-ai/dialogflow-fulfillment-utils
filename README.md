@@ -2,11 +2,11 @@
 # dialogflow-fulfillment-utils
 [![npm](https://img.shields.io/npm/v/dialogflow-fulfillment-utils.svg)](https://www.npmjs.com/package/dialogflow-fulfillment-utils)
 
-Utility lib for handling Dialogflow [`/query`](https://dialogflow.com/docs/reference/agent/query#get_and_post_responses) [Response object's](https://dialogflow.com/docs/reference/agent/query#get_and_post_responses) `filfillment` object
+Utility lib for handling Dialogflow v2 API [`detectIntent`](https://cloud.google.com/dialogflow/docs/reference/rest/v2beta1/projects.agent.sessions/detectIntent) [Response object's](https://cloud.google.com/dialogflow/docs/reference/rest/v2beta1/DetectIntentResponse) `filfillment` object
 
 ## Installation
 
-* Requires Api.ai/Dialogflow SDK or similar
+* Requires Dialogflow SDK or similar
 * Install module with `npm`:
 ```shell
 npm install --save dialogflow-fulfillment-utils
@@ -16,30 +16,46 @@ npm install --save dialogflow-fulfillment-utils
 Below is an example how to use the module along with the `api` module.
 
 ```javascript
-const apiai = require('apiai');
+const dialogflow = require('dialogflow');
+const uuid = require('uuid');
 const dffUtils = require('dialogflow-fulfillment-utils');
 
-const app = apiai("<your client access token>");
+/**
+ * Send a query to the dialogflow agent, and return the query result.
+ * @param {string} projectId The project to be used
+ */
+async function runSample(projectId = 'your-project-id') {
+  // A unique identifier for the given session
+  const sessionId = uuid.v4();
+ 
+  // Create a new session
+  const sessionClient = new dialogflow.SessionsClient();
+  const sessionPath = sessionClient.sessionPath(projectId, sessionId);
+ 
+  // The text query request.
+  const request = {
+    session: sessionPath,
+    queryInput: {
+      text: {
+        // The query to send to the dialogflow agent
+        text: 'hello',
+        // The language used by the client (en-US)
+        languageCode: 'en-US',
+      },
+    },
+  };
+ 
+  // Send request and log result
+  const responses = await sessionClient.detectIntent(request);
 
-var request = app.textRequest('<Your text query>', {
-  sessionId: '<unique session id>'
-});
-
-request.on('response', function(response) {
   // get all the messages from fulfillment
-  var messages = dffUtils.getMessages(response);
+  var messages = dffUtils.getMessages(responses);
   // only get the messages for Facebook Messenger
-  var fbMessages = dffUtils.getMessages(response, 'facebook');
+  var fbMessages = dffUtils.getMessages(responses, 'facebook');
   // only get the messages for Slack
-  var slackMessages = dffUtils.getMessages(response, 'slack');
-  // code to send messages
-});
+  var slackMessages = dffUtils.getMessages(responses, 'slack');
 
-request.on('error', function(error) {
-  console.log(error);
-});
-
-request.end();
+}
 ```
 
 ## Documentation
