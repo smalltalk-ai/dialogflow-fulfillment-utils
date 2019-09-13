@@ -1,11 +1,11 @@
 'use strict';
 
-function addSpeech(messages, speech) {
-  if (speech) {
+function addText(messages, text) {
+  if (text) {
     messages = messages.concat({
       type: 0,
-      speech
-    })
+      text
+    });
   }
   return messages;
 }
@@ -16,26 +16,28 @@ function includeMsg(platformFilter, platform) {
 }
 
 function getMessages(response, platformFilter) {
-  if (!response || !response.result || !response.result.fulfillment) {
+  if (!response || !response.queryResult || !response.queryResult.fulfillment) {
     return [];
   }
 
-  let
-    fulfillment = response.result.fulfillment,
-    speech = fulfillment.speech || '',
+  const
+    fulfillment = response.queryResult.fulfillment,
+    text = fulfillment.text || '',
     messages = fulfillment.messages || [],
     lastMessageIdx = messages.length - 1,
-    cards = {},
+    cards = {}
+  ;
+  let
     fixedMsgs = []
   ;
 
   if (messages.length === 0) {
-    // no messages, so return the fulfillment.speech
-    fixedMsgs = addSpeech(fixedMsgs, speech);
+    // no messages, so return the fulfillment.text
+    fixedMsgs = addText(fixedMsgs, text);
   }
 
   messages.forEach((message, idx) => {
-    let
+    const
       msgType = message.type,
       msgPlatform = message.platform
     ;
@@ -47,8 +49,8 @@ function getMessages(response, platformFilter) {
         cards[msgPlatform] = [];
       }
       // add card to platform card set
-      delete message.platform
-      delete message.type
+      delete message.platform;
+      delete message.type;
 
       cards[msgPlatform].push(message);
     }
@@ -56,8 +58,8 @@ function getMessages(response, platformFilter) {
     if (idx === lastMessageIdx || msgType !== 1) {
       // this is last message or it is not a card
       // create a cards message for each platform
-      for (let platform in cards) {
-        if (includeMsg(platformFilter, platform) && cards.hasOwnProperty(platform)) {
+      for (const platform in cards) {
+        if (includeMsg(platformFilter, platform) && Object.prototype.hasOwnProperty.call(cards, platform)) {
           // check if there are cards to process
           if (cards[platform].length > 0) {
             // add card set to messages
@@ -73,19 +75,19 @@ function getMessages(response, platformFilter) {
       }
     }
     switch (msgType) {
-      case 0: // text
-      case 2: // quick replies
-      case 3: // image
-      case 4: // payload
-        // add to outgoing messages
-        if (includeMsg(platformFilter, msgPlatform)) {
-          fixedMsgs = fixedMsgs.concat(message);
-        }
-        break;
-      case 1:
-        // handled above
-        break;
-      default:
+    case 0: // text
+    case 2: // quick replies
+    case 3: // image
+    case 4: // payload
+      // add to outgoing messages
+      if (includeMsg(platformFilter, msgPlatform)) {
+        fixedMsgs = fixedMsgs.concat(message);
+      }
+      break;
+    case 1:
+      // handled above
+      break;
+    default:
     }
   });
   return fixedMsgs;
