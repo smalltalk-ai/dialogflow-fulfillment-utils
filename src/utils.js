@@ -20,3 +20,17 @@ exports.changeStructProtoToJson = function changeStructProtoToJson(obj) {
   }
   return obj;
 };
+
+exports.getMessageType = function (message) {
+  if (message !== null && typeof message === 'object') {
+    let p;
+    for (p in message) {
+      if (Object.prototype.hasOwnProperty.call(message, p)) {
+        if (p !== 'platform') {
+          return p;
+        }
+      } 
+    } 
+  }
+  return null;
+};

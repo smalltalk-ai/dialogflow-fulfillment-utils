@@ -7,13 +7,10 @@ const
 ;
 
 function generateResponse(messages, text) {
-  text = text || 'foo bar';
   return {
     queryResult: {
-      fulfillment: {
-        text,
-        messages
-      }
+      fulfillmentText: text,
+      fulfillmentMessages: messages
     }
   };
 }
@@ -24,18 +21,58 @@ describe('DialogflowFulfillmentUtils.getMessages', () => {
     expect(fulfillmentUtils.getMessages()).to.deep.equal(expected);
   });
 
-  it('getMessages() should return empty if empty response is passed in', () => {
+  it('getMessages() should return empty if fulfillmentText and fulfillmentMessages are not passed in', () => {
     const
-      response = {},
+      response = {
+        queryResult: {}
+      },
       expected = []
     ;
     expect(fulfillmentUtils.getMessages(response)).to.deep.equal(expected);
   });
 
-  it('getMessages() should return empty if empty response.fulfillment is passed in', () => {
+  it('getMessages() should return empty if null fulfillmentText is passed in', () => {
     const
       response = {
-        fulfillment: {}
+        queryResult: {
+          fulfillmentText: null
+        }
+      },
+      expected = []
+    ;
+    expect(fulfillmentUtils.getMessages(response)).to.deep.equal(expected);
+  });
+
+  it('getMessages() should return empty if empty fulfillmentText is passed in', () => {
+    const
+      response = {
+        queryResult: {
+          fulfillmentText: ''
+        }
+      },
+      expected = []
+    ;
+    expect(fulfillmentUtils.getMessages(response)).to.deep.equal(expected);
+  });
+
+  it('getMessages() should return empty if null fulfillmentMessages is passed in', () => {
+    const
+      response = {
+        queryResult: {
+          fulfillmentMessages: null
+        }
+      },
+      expected = []
+    ;
+    expect(fulfillmentUtils.getMessages(response)).to.deep.equal(expected);
+  });
+
+  it('getMessages() should return empty if empty fulfillmentMessages is passed in', () => {
+    const
+      response = {
+        queryResult: {
+          fulfillmentMessages: []
+        }
       },
       expected = []
     ;
@@ -46,9 +83,8 @@ describe('DialogflowFulfillmentUtils.getMessages', () => {
     const
       response = {
         queryResult: {
-          fulfillment: {
-            messages: []
-          }
+          fulfillmentText: '',
+          fulfillmentMessages: []
         }
       },
       expected = []
@@ -60,8 +96,11 @@ describe('DialogflowFulfillmentUtils.getMessages', () => {
     const
       response = generateResponse([], 'no messages'),
       expected = [{
-        type: 0,
-        text: 'no messages'
+        platform: '',
+        message: 'text',
+        text: {
+          text: 'no messages'
+        }
       }]
     ;
     expect(fulfillmentUtils.getMessages(response)).to.deep.equal(expected);
@@ -70,12 +109,18 @@ describe('DialogflowFulfillmentUtils.getMessages', () => {
   it('getMessages() should return same if 1 default message is passed in', () => {
     const
       messages = [{
-        type: 0,
-        text: 'hi'
+        text: {
+          text: [
+            'default'
+          ]
+        }
       }],
       expected = [{
-        type: 0,
-        text: 'hi'
+        platform: '',
+        text: {
+          text: 'default'
+        },
+        message: 'text'
       }]
     ;
     expect(fulfillmentUtils.getMessages(generateResponse(messages))).to.deep.equal(expected);
@@ -83,31 +128,9 @@ describe('DialogflowFulfillmentUtils.getMessages', () => {
 
   it('getMessages() should return grouped card if messages contains only 1 card', () => {
     const
-      messages = [{
-        type: 1,
-        platform: 'slack',
-        title: 'Card 1 Title',
-        subtitle: 'Card 1 Subtitle',
-        buttons: [
-          {
-            text: 'Button 1',
-            postback: 'clicked-btn-1'
-          },
-          {
-            text: 'Button 2',
-            postback: ''
-          },
-          {
-            text: 'https://www.google.com/',
-            postback: ''
-          }
-        ]
-      }],
-      expected = [
+      messages = [
         {
-          type: 1,
-          platform: 'slack',
-          cards: [{
+          card: {
             title: 'Card 1 Title',
             subtitle: 'Card 1 Subtitle',
             buttons: [
@@ -116,163 +139,20 @@ describe('DialogflowFulfillmentUtils.getMessages', () => {
                 postback: 'clicked-btn-1'
               },
               {
-                text: 'Button 2',
-                postback: ''
+                text: 'Button 2'
               },
               {
                 text: 'https://www.google.com/',
-                postback: ''
+                postback: 'https://www.google.com/'
               }
             ]
-          }]
-        }
-      ]
-    ;
-    expect(fulfillmentUtils.getMessages(generateResponse(messages))).to.deep.equal(expected);
-  });
-
-  it('getMessages() should return grouped cards if messages contains cards', () => {
-    const
-      messages = [
-        {
-          type: 0,
-          platform: 'slack',
-          text: 'hi'
-        },
-        {
-          type: 0,
-          platform: 'facebook',
-          text: 'hi'
-        },
-        {
-          type: 0,
-          platform: 'slack',
-          text: 'default 2'
-        },
-        {
-          type: 0,
-          platform: 'facebook',
-          text: 'default 2'
-        },
-        {
-          type: 0,
-          platform: 'facebook',
-          text: 'text 1'
-        },
-        {
-          type: 0,
-          text: 'hi'
-        },
-        {
-          type: 0,
-          text: 'default 2'
-        },
-        {
-          type: 0,
-          platform: 'slack',
-          text: 'text 1 - 3'
-        },
-        {
-          type: 3,
-          platform: 'slack',
-          imageUrl: 'https://c1.staticflickr.com/4/3015/2765083201_55a958db14_b.jpg'
-        },
-        {
-          type: 2,
-          platform: 'slack',
-          title: 'QR - Title',
-          replies: [
-            '1st response',
-            '2nd response'
-          ]
-        },
-        {
-          type: 1,
-          platform: 'slack',
-          title: 'Card 1 Title',
-          subtitle: 'Card 1 Subtitle',
-          buttons: [
-            {
-              text: 'Button 1',
-              postback: 'clicked-btn-1'
-            },
-            {
-              text: 'Button 2',
-              postback: ''
-            },
-            {
-              text: 'https://www.google.com/',
-              postback: ''
-            }
-          ]
-        },
-        {
-          type: 1,
-          platform: 'slack',
-          title: 'Card 2 Title',
-          imageUrl: 'https://c1.staticflickr.com/4/3015/2765083201_55a958db14_b.jpg',
-          buttons: [{
-            text: 'Card 2 Btn 1',
-            postback: 'click-card2-btn-1'
-          }]
+          },
+          platform: 'SLACK'
         }
       ],
       expected = [
         {
-          type: 0,
-          platform: 'slack',
-          text: 'hi'
-        },
-        {
-          type: 0,
-          platform: 'facebook',
-          text: 'hi'
-        },
-        {
-          type: 0,
-          platform: 'slack',
-          text: 'default 2'
-        },
-        {
-          type: 0,
-          platform: 'facebook',
-          text: 'default 2'
-        },
-        {
-          type: 0,
-          platform: 'facebook',
-          text: 'text 1'
-        },
-        {
-          type: 0,
-          text: 'hi'
-        },
-        {
-          type: 0,
-          text: 'default 2'
-        },
-        {
-          type: 0,
-          platform: 'slack',
-          text: 'text 1 - 3'
-        },
-        {
-          type: 3,
-          platform: 'slack',
-          imageUrl: 'https://c1.staticflickr.com/4/3015/2765083201_55a958db14_b.jpg'
-        },
-        {
-          type: 2,
-          platform: 'slack',
-          title: 'QR - Title',
-          replies: [
-            '1st response',
-            '2nd response'
-          ]
-        },
-        {
-          type: 1,
-          platform: 'slack',
+          message: 'cards',
           cards: [
             {
               title: 'Card 1 Title',
@@ -283,128 +163,344 @@ describe('DialogflowFulfillmentUtils.getMessages', () => {
                   postback: 'clicked-btn-1'
                 },
                 {
-                  text: 'Button 2',
-                  postback: ''
+                  text: 'Button 2'
                 },
                 {
                   text: 'https://www.google.com/',
-                  postback: ''
+                  postback: 'https://www.google.com/'
                 }
               ]
             },
-            {
-              title: 'Card 2 Title',
-              imageUrl: 'https://c1.staticflickr.com/4/3015/2765083201_55a958db14_b.jpg',
-              buttons: [{
-                text: 'Card 2 Btn 1',
-                postback: 'click-card2-btn-1'
-              }]
-            }
-          ]
+          ],
+          platform: 'SLACK'
         }
       ]
     ;
     expect(fulfillmentUtils.getMessages(generateResponse(messages))).to.deep.equal(expected);
   });
 
-  it('getMessages() should return 2 groups of cards if messages contain seperated cards', () => {
+  it('getMessages() should return grouped cards if messages contains cards', () => {
     const
       messages = [
         {
-          type: 1,
-          platform: 'facebook',
-          title: 'Card 1',
-          buttons: [{
-            text: 'card 1 btn',
-            postback: ''
-          }]
+          text: {
+            text: [
+              'default hi'
+            ]
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 1,
-          platform: 'facebook',
-          title: 'Card 2',
-          buttons: [{
-            text: 'card 2 btn',
-            postback: ''
-          }]
+          text: {
+            text: [
+              'default hi'
+            ]
+          },
+          platform: 'SLACK'
         },
         {
-          type: 0,
-          platform: 'facebook',
-          text: 'text between card group'
+          text: {
+            text: [
+              'hi'
+            ]
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 1,
-          platform: 'facebook',
-          title: 'Card 3',
-          buttons: [{
-            text: 'card 3 btn',
-            postback: ''
-          }]
+          text: {
+            text: [
+              'default 2'
+            ]
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 1,
-          platform: 'facebook',
-          title: 'Card 4',
-          buttons: [{
-            text: 'card 4 btn',
-            postback: ''
-          }]
+          text: {
+            text: [
+              'hi'
+            ]
+          },
+          platform: 'SLACK'
         },
         {
-          type: 0,
-          text: ''
+          text: {
+            text: [
+              'default 2'
+            ]
+          },
+          platform: 'SLACK'
+        },
+        {
+          image: {
+            imageUri: 'https://via.placeholder.com/300/09f/fff.png'
+          },
+          platform: 'SLACK'
+        },
+        {
+          quickReplies: {
+            title: 'QR - Title',
+            quickReplies: [
+              '1st response',
+              '2nd response'
+            ]
+          },
+          platform: 'SLACK'
+        },
+        {
+          card: {
+            title: 'Card 1 Title',
+            subtitle: 'Card 1 Subtitle',
+            buttons: [
+              {
+                text: 'Button 1',
+                postback: 'clicked-btn-1'
+              },
+              {
+                text: 'Button 2'
+              },
+              {
+                text: 'https://www.google.com/'
+              }
+            ]
+          },
+          platform: 'SLACK'
+        },
+        {
+          card: {
+            title: 'Card 2 Title',
+            imageUri: 'https://via.placeholder.com/250/09f/fff.png',
+            buttons: [
+              {
+                text: 'Card 2 Btn 1'
+              },
+              {
+                text: 'click-card2-btn-1'
+              }
+            ]
+          },
+          platform: 'SLACK'
+        },
+        {
+          text: {
+            text: [
+              'default hi'
+            ]
+          }
         }
       ],
       expected = [
         {
-          type: 1,
-          platform: 'facebook',
+          message: 'text',
+          text: {
+            text: 'default hi'
+          },
+          platform: 'FACEBOOK'
+        },
+        {
+          message: 'text',
+          text: {
+            text: 'default hi'
+          },
+          platform: 'SLACK'
+        },
+        {
+          message: 'text',
+          text: {
+            text: 'hi'
+          },
+          platform: 'FACEBOOK'
+        },
+        {
+          message: 'text',
+          text: {
+            text: 'default 2'
+          },
+          platform: 'FACEBOOK'
+        },
+        {
+          message: 'text',
+          text: {
+            text: 'hi'
+          },
+          platform: 'SLACK'
+        },
+        {
+          message: 'text',
+          text: {
+            text: 'default 2'
+          },
+          platform: 'SLACK'
+        },
+        {
+          message: 'image',
+          image: {
+            imageUri: 'https://via.placeholder.com/300/09f/fff.png'
+          },
+          platform: 'SLACK'
+        },
+        {
+          message: 'quickReplies',
+          quickReplies: {
+            title: 'QR - Title',
+            quickReplies: [
+              '1st response',
+              '2nd response'
+            ]
+          },
+          platform: 'SLACK'
+        },
+        {
+          message: 'cards',
+          cards: [
+            {
+              title: 'Card 1 Title',
+              subtitle: 'Card 1 Subtitle',
+              buttons: [
+                {
+                  text: 'Button 1',
+                  postback: 'clicked-btn-1'
+                },
+                {
+                  text: 'Button 2'
+                },
+                {
+                  text: 'https://www.google.com/'
+                }
+              ]
+            },
+            {
+              title: 'Card 2 Title',
+              imageUri: 'https://via.placeholder.com/250/09f/fff.png',
+              buttons: [
+                {
+                  text: 'Card 2 Btn 1'
+                },
+                {
+                  text: 'click-card2-btn-1'
+                }
+              ]
+            }
+          ],
+          platform: 'SLACK'
+        },
+        {
+          message: 'text',
+          text: {
+            text: 'default hi'
+          },
+          platform: ''
+        }
+      ]
+    ;
+    expect(fulfillmentUtils.getMessages(generateResponse(messages, 'default hi'))).to.deep.equal(expected);
+  });
+
+  it('getMessages() should return 2 groups of cards if messages contain seperated cards', () => {
+    const
+      messages = [
+        {
+          card: {
+            title: 'Card 1',
+            buttons: [
+              {
+                text: 'card 1 btn'
+              }
+            ]
+          },
+          platform: 'FACEBOOK'
+        },
+        {
+          card: {
+            title: 'Card 2',
+            buttons: [
+              {
+                text: 'card 2 btn'
+              }
+            ]
+          },
+          platform: 'FACEBOOK'
+        },
+        {
+          text: {
+            text: [
+              'text between card group'
+            ]
+          },
+          platform: 'FACEBOOK'
+        },
+        {
+          card: {
+            title: 'Card 3',
+            buttons: [
+              {
+                text: 'card 3 btn'
+              }
+            ]
+          },
+          platform: 'FACEBOOK'
+        },
+        {
+          card: {
+            title: 'Card 4',
+            buttons: [
+              {
+                text: 'card 4 btn'
+              }
+            ]
+          },
+          platform: 'FACEBOOK'
+        },
+        {
+          text: {
+            text: [
+              ''
+            ]
+          }
+        }
+      ],
+      expected = [
+        {
+          message: 'cards',
+          platform: 'FACEBOOK',
           cards: [
             {
               title: 'Card 1',
               buttons: [{
-                text: 'card 1 btn',
-                postback: ''
+                text: 'card 1 btn'
               }]
             },
             {
               title: 'Card 2',
               buttons: [{
-                text: 'card 2 btn',
-                postback: ''
+                text: 'card 2 btn'
               }]
             }
           ]
         },
         {
-          type: 0,
-          platform: 'facebook',
-          text: 'text between card group'
+          message: 'text',
+          platform: 'FACEBOOK',
+          text: {
+            text: 'text between card group'
+          }
         },
         {
-          type: 1,
-          platform: 'facebook',
+          message: 'cards',
+          platform: 'FACEBOOK',
           cards: [
             {
               title: 'Card 3',
               buttons: [{
-                text: 'card 3 btn',
-                postback: ''
+                text: 'card 3 btn'
               }]
             },
             {
               title: 'Card 4',
               buttons: [{
-                text: 'card 4 btn',
-                postback: ''
+                text: 'card 4 btn'
               }]
             }
           ]
-        },
-        {
-          type: 0,
-          text: ''
         }
       ]
     ;
@@ -415,176 +511,219 @@ describe('DialogflowFulfillmentUtils.getMessages', () => {
     const
       messages = [
         {
-          type: 1,
-          platform: 'facebook',
-          title: 'Card 1',
-          buttons: [{
-            text: 'card 1 btn',
-            postback: ''
-          }]
+          card: {
+            title: 'Card 1',
+            buttons: [
+              {
+                text: 'card 1 btn'
+              }
+            ]
+          },
+          platform: 'SLACK'
         },
         {
-          type: 1,
-          platform: 'facebook',
-          title: 'Card 2',
-          buttons: [{
-            text: 'card 2 btn',
-            postback: ''
-          }]
+          card: {
+            title: 'Card 2',
+            buttons: [
+              {
+                text: 'card 2 btn'
+              }
+            ]
+          },
+          platform: 'SLACK'
         },
         {
-          type: 1,
-          platform: 'slack',
-          title: 'Card 1',
-          buttons: [{
-            text: 'card 1 btn',
-            postback: ''
-          }]
+          text: {
+            text: [
+              'slack text between cards'
+            ]
+          },
+          platform: 'SLACK'
         },
         {
-          type: 1,
-          platform: 'slack',
-          title: 'Card 2',
-          buttons: [{
-            text: 'card 2 btn',
-            postback: ''
-          }]
+          card: {
+            title: 'Card 3',
+            buttons: [
+              {
+                text: 'card 3 btn'
+              }
+            ]
+          },
+          platform: 'SLACK'
         },
         {
-          type: 0,
-          platform: 'facebook',
-          text: 'text between card group'
+          card: {
+            title: 'Card 4',
+            buttons: [
+              {
+                text: 'card 4 btn'
+              }
+            ]
+          },
+          platform: 'SLACK'
         },
         {
-          type: 1,
-          platform: 'facebook',
-          title: 'Card 3',
-          buttons: [{
-            text: 'card 3 btn',
-            postback: ''
-          }]
+          card: {
+            title: 'Card 1',
+            buttons: [
+              {
+                text: 'card 1 btn'
+              }
+            ]
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 1,
-          platform: 'facebook',
-          title: 'Card 4',
-          buttons: [{
-            text: 'card 4 btn',
-            postback: ''
-          }]
+          card: {
+            title: 'Card 2',
+            buttons: [
+              {
+                text: 'card 2 btn'
+              }
+            ]
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 1,
-          platform: 'slack',
-          title: 'Card 3',
-          buttons: [{
-            text: 'card 3 btn',
-            postback: ''
-          }]
+          text: {
+            text: [
+              'text between card group'
+            ]
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 1,
-          platform: 'slack',
-          title: 'Card 4',
-          buttons: [{
-            text: 'card 4 btn',
-            postback: ''
-          }]
+          card: {
+            title: 'Card 3',
+            buttons: [
+              {
+                text: 'card 3 btn'
+              }
+            ]
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 0,
-          text: ''
+          card: {
+            title: 'Card 4',
+            buttons: [
+              {
+                text: 'card 4 btn'
+              }
+            ]
+          },
+          platform: 'FACEBOOK'
+        },
+        {
+          text: {
+            text: [
+              ''
+            ]
+          }
         }
       ],
       expected = [
         {
-          type: 1,
-          platform: 'facebook',
+          message: 'cards',
           cards: [
             {
               title: 'Card 1',
-              buttons: [{
-                text: 'card 1 btn',
-                postback: ''
-              }]
+              buttons: [
+                {
+                  text: 'card 1 btn'
+                }
+              ]
             },
             {
               title: 'Card 2',
-              buttons: [{
-                text: 'card 2 btn',
-                postback: ''
-              }]
+              buttons: [
+                {
+                  text: 'card 2 btn'
+                }
+              ]
             }
-          ]
+          ],
+          platform: 'SLACK'
         },
         {
-          type: 1,
-          platform: 'slack',
+          message: 'text',
+          text: {
+            text: 'slack text between cards'
+          },
+          platform: 'SLACK'
+        },
+        {
+          message: 'cards',
+          cards: [
+            {
+              title: 'Card 3',
+              buttons: [
+                {
+                  text: 'card 3 btn'
+                }
+              ]
+            },
+            {
+              title: 'Card 4',
+              buttons: [
+                {
+                  text: 'card 4 btn'
+                }
+              ]
+            }
+          ],
+          platform: 'SLACK'
+        },
+        {
+          message: 'cards',
           cards: [
             {
               title: 'Card 1',
-              buttons: [{
-                text: 'card 1 btn',
-                postback: ''
-              }]
+              buttons: [
+                {
+                  text: 'card 1 btn'
+                }
+              ]
             },
             {
               title: 'Card 2',
-              buttons: [{
-                text: 'card 2 btn',
-                postback: ''
-              }]
+              buttons: [
+                {
+                  text: 'card 2 btn'
+                }
+              ]
             }
-          ]
+          ],
+          platform: 'FACEBOOK'
         },
         {
-          type: 0,
-          platform: 'facebook',
-          text: 'text between card group'
+          message: 'text',
+          text: {
+            text: 'text between card group'
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 1,
-          platform: 'facebook',
+          message: 'cards',
           cards: [
             {
               title: 'Card 3',
-              buttons: [{
-                text: 'card 3 btn',
-                postback: ''
-              }]
+              buttons: [
+                {
+                  text: 'card 3 btn'
+                }
+              ]
             },
             {
               title: 'Card 4',
-              buttons: [{
-                text: 'card 4 btn',
-                postback: ''
-              }]
+              buttons: [
+                {
+                  text: 'card 4 btn'
+                }
+              ]
             }
-          ]
-        },
-        {
-          type: 1,
-          platform: 'slack',
-          cards: [
-            {
-              title: 'Card 3',
-              buttons: [{
-                text: 'card 3 btn',
-                postback: ''
-              }]
-            },
-            {
-              title: 'Card 4',
-              buttons: [{
-                text: 'card 4 btn',
-                postback: ''
-              }]
-            }
-          ]
-        },
-        {
-          type: 0,
-          text: ''
+          ],
+          platform: 'FACEBOOK'
         }
       ]
     ;
@@ -596,137 +735,168 @@ describe('DialogflowFulfillmentUtils.getMessages', () => {
       filterPlatform = 'facebook',
       messages = [
         {
-          type: 1,
-          platform: 'facebook',
-          title: 'Card 1',
-          buttons: [{
-            text: 'card 1 btn',
-            postback: ''
-          }]
+          card: {
+            title: 'Card 1',
+            buttons: [
+              {
+                text: 'card 1 btn'
+              }
+            ]
+          },
+          platform: 'SLACK'
         },
         {
-          type: 1,
-          platform: 'facebook',
-          title: 'Card 2',
-          buttons: [{
-            text: 'card 2 btn',
-            postback: ''
-          }]
+          card: {
+            title: 'Card 2',
+            buttons: [
+              {
+                text: 'card 2 btn'
+              }
+            ]
+          },
+          platform: 'SLACK'
         },
         {
-          type: 1,
-          platform: 'slack',
-          title: 'Card 1',
-          buttons: [{
-            text: 'card 1 btn',
-            postback: ''
-          }]
+          text: {
+            text: [
+              'slack text between cards'
+            ]
+          },
+          platform: 'SLACK'
         },
         {
-          type: 1,
-          platform: 'slack',
-          title: 'Card 2',
-          buttons: [{
-            text: 'card 2 btn',
-            postback: ''
-          }]
+          card: {
+            title: 'Card 3',
+            buttons: [
+              {
+                text: 'card 3 btn'
+              }
+            ]
+          },
+          platform: 'SLACK'
         },
         {
-          type: 0,
-          platform: 'facebook',
-          text: 'text between card group'
+          card: {
+            title: 'Card 4',
+            buttons: [
+              {
+                text: 'card 4 btn'
+              }
+            ]
+          },
+          platform: 'SLACK'
         },
         {
-          type: 1,
-          platform: 'facebook',
-          title: 'Card 3',
-          buttons: [{
-            text: 'card 3 btn',
-            postback: ''
-          }]
+          card: {
+            title: 'Card 1',
+            buttons: [
+              {
+                text: 'card 1 btn'
+              }
+            ]
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 1,
-          platform: 'facebook',
-          title: 'Card 4',
-          buttons: [{
-            text: 'card 4 btn',
-            postback: ''
-          }]
+          card: {
+            title: 'Card 2',
+            buttons: [
+              {
+                text: 'card 2 btn'
+              }
+            ]
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 1,
-          platform: 'slack',
-          title: 'Card 3',
-          buttons: [{
-            text: 'card 3 btn',
-            postback: ''
-          }]
+          text: {
+            text: [
+              'text between card group'
+            ]
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 1,
-          platform: 'slack',
-          title: 'Card 4',
-          buttons: [{
-            text: 'card 4 btn',
-            postback: ''
-          }]
+          card: {
+            title: 'Card 3',
+            buttons: [
+              {
+                text: 'card 3 btn'
+              }
+            ]
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 0,
-          platform: 'slack',
-          text: 'foo bar'
+          card: {
+            title: 'Card 4',
+            buttons: [
+              {
+                text: 'card 4 btn'
+              }
+            ]
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 0,
-          text: ''
+          text: {
+            text: [
+              ''
+            ]
+          }
         }
       ],
       expected = [
         {
-          type: 1,
-          platform: 'facebook',
+          message: 'cards',
           cards: [
             {
               title: 'Card 1',
-              buttons: [{
-                text: 'card 1 btn',
-                postback: ''
-              }]
+              buttons: [
+                {
+                  text: 'card 1 btn'
+                }
+              ]
             },
             {
               title: 'Card 2',
-              buttons: [{
-                text: 'card 2 btn',
-                postback: ''
-              }]
+              buttons: [
+                {
+                  text: 'card 2 btn'
+                }
+              ]
             }
-          ]
+          ],
+          platform: 'FACEBOOK'
         },
         {
-          type: 0,
-          platform: 'facebook',
-          text: 'text between card group'
+          message: 'text',
+          text: {
+            text: 'text between card group'
+          },
+          platform: 'FACEBOOK'
         },
         {
-          type: 1,
-          platform: 'facebook',
+          message: 'cards',
           cards: [
             {
               title: 'Card 3',
-              buttons: [{
-                text: 'card 3 btn',
-                postback: ''
-              }]
+              buttons: [
+                {
+                  text: 'card 3 btn'
+                }
+              ]
             },
             {
               title: 'Card 4',
-              buttons: [{
-                text: 'card 4 btn',
-                postback: ''
-              }]
+              buttons: [
+                {
+                  text: 'card 4 btn'
+                }
+              ]
             }
-          ]
+          ],
+          platform: 'FACEBOOK'
         }
       ]
     ;
