@@ -1,6 +1,5 @@
 'use strict';
 const { getMessageType, changeStructProtoToJson } = require('./utils');
-//const FACEBOOK = require('./facebook_formatter');
 
 function addText(messages, text) {
   if (text) {
@@ -90,7 +89,6 @@ function getMessages(response, platformFilter) {
       if (!Object.prototype.hasOwnProperty.call(message, 'platform')) {
         message.platform = '';
       }
-      //const formatted = msgPlatform === 'FACEBOOK' ? FACEBOOK.formatMessage(message) : message;
       if (add) {
         fixedMsgs = fixedMsgs.concat(message);
       }

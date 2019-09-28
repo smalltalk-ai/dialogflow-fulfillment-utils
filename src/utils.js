@@ -21,12 +21,15 @@ exports.changeStructProtoToJson = function changeStructProtoToJson(obj) {
   return obj;
 };
 
+/**
+ * Get the message type of the message: text, card, etc
+ */
 exports.getMessageType = function (message) {
   if (message !== null && typeof message === 'object') {
     let p;
     for (p in message) {
       if (Object.prototype.hasOwnProperty.call(message, p)) {
-        if (p !== 'platform') {
+        if (p !== 'platform' && p !== 'message') {
           return p;
         }
       } 
