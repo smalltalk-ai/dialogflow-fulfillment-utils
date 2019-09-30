@@ -315,3 +315,107 @@ describe('formatter_facebook.formatMessage image', () => {
     expect(formatter.formatMessage(message)).to.deep.equal(expected);
   });
 });
+
+describe('formatter_facebook.formatMessage payload', () => {
+  it('formatMessage() should return null if null payload property is passed in', () => {
+    const message = {
+      payload: null,
+      platform: 'FACEBOOK'
+    };
+    const expected = null;
+    expect(formatter.formatMessage(message)).to.deep.equal(expected);
+  });
+
+  it('formatMessage() should return null if empty payload property is passed in', () => {
+    const message = {
+      payload: {},
+      platform: 'FACEBOOK'
+    };
+    const expected = null;
+    expect(formatter.formatMessage(message)).to.deep.equal(expected);
+  });
+
+  it('formatMessage() should return null if null facebook property is passed in', () => {
+    const message = {
+      payload: {
+        facebook: null
+      },
+      platform: 'FACEBOOK'
+    };
+    const expected = null;
+    expect(formatter.formatMessage(message)).to.deep.equal(expected);
+  });
+
+  it('formatMessage() should return null if empty facebook property is passed in', () => {
+    const message = {
+      image: {
+        facebook: {}
+      },
+      platform: 'FACEBOOK'
+    };
+    const expected = null;
+    expect(formatter.formatMessage(message)).to.deep.equal(expected);
+  });
+
+  it('formatMessage() should return payload if payload property is passed in', () => {
+    const message = {
+      platform: 'FACEBOOK',
+      payload: {
+        facebook: {
+          attachment: {
+            type: 'template',
+            payload: {
+              buttons: [
+                {
+                  type: 'postback',
+                  title: 'Learn About Bots',
+                  payload: 'clicked-learn-chatbots'
+                },
+                {
+                  payload: 'clicked-contact-us',
+                  type: 'postback',
+                  title: 'Contact Us'
+                },
+                {
+                  title: 'About Us',
+                  payload: 'clicked-about-us',
+                  type: 'postback'
+                }
+              ],
+              template_type: 'button',
+              text: 'Welcome to SmallTalk\'s Virtual Assistant! What can I help you with today?'
+            }
+          }
+        }
+      },
+      message: 'payload'
+    };
+    const expected = {
+      attachment: {
+        type: 'template',
+        payload: {
+          buttons: [
+            {
+              type: 'postback',
+              title: 'Learn About Bots',
+              payload: 'clicked-learn-chatbots'
+            },
+            {
+              payload: 'clicked-contact-us',
+              type: 'postback',
+              title: 'Contact Us'
+            },
+            {
+              title: 'About Us',
+              payload: 'clicked-about-us',
+              type: 'postback'
+            }
+          ],
+          template_type: 'button',
+          text: 'Welcome to SmallTalk\'s Virtual Assistant! What can I help you with today?'
+        }
+      }
+    };
+    expect(formatter.formatMessage(message)).to.deep.equal(expected);
+  });
+});

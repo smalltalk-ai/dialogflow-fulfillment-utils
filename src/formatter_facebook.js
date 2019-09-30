@@ -95,6 +95,13 @@ exports.formatMessage = function (message) {
       };
     }
     break;
+  case 'payload':
+    if (!message.payload || !message.payload.facebook) {
+      content = null;
+    } else {
+      content = message.payload.facebook;
+    }
+    break;
   }
 
   return content;
