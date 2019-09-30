@@ -1,10 +1,16 @@
 'use strict';
+const { getMessageType, changeStructProtoToJson } = require('./utils');
 
-function addText(messages, text) {
+function addText(messages, text, platform) {
   if (text) {
     messages = messages.concat({
-      type: 0,
-      text
+      platform: platform || '',
+      text: {
+        text: [
+          text
+        ]
+      },
+      message: 'text'
     });
   }
   return messages;
@@ -12,37 +18,57 @@ function addText(messages, text) {
 
 function includeMsg(platformFilter, platform) {
   // if platformFilter is set, then filter out other platform messages
-  return !platformFilter || platformFilter === platform;
+  return !platformFilter || platformFilter.toUpperCase() === platform;
 }
 
 function getMessages(response, platformFilter) {
-  if (!response || !response.queryResult || !response.queryResult.fulfillment) {
+  response = changeStructProtoToJson(response);
+  if (!response || !response.queryResult || (!response.queryResult.fulfillmentText && !response.queryResult.fulfillmentMessages)) {
     return [];
   }
 
-  const
-    fulfillment = response.queryResult.fulfillment,
-    text = fulfillment.text || '',
-    messages = fulfillment.messages || [],
-    lastMessageIdx = messages.length - 1,
-    cards = {}
-  ;
-  let
-    fixedMsgs = []
-  ;
+  const queryResult = response.queryResult;
+  const text = queryResult.fulfillmentText || '';
+  let messages = queryResult.fulfillmentMessages || [];
+  const cards = {};
+
+  // filter the messages by platform
+  if (platformFilter) {
+    messages = messages.filter(function(msg) {
+      const msgPlatform = msg.platform ? msg.platform.toUpperCase() : '';
+      return includeMsg(platformFilter, msgPlatform);
+    });
+    if (messages.length === 0 && queryResult.fulfillmentMessages) {
+      // no messages, see if there are PLATFORM_UNSPECIFIED messages
+      messages = queryResult.fulfillmentMessages.filter(function(msg) {
+        return msg.platform && msg.platform === 'PLATFORM_UNSPECIFIED';
+      });
+      if (messages.length) {
+        messages.forEach((message) => {
+          message.platform = platformFilter ? platformFilter.toUpperCase() : '';
+        });
+      }
+    }
+  }
+  const lastMessageIdx = messages.length - 1;
 
   if (messages.length === 0) {
     // no messages, so return the fulfillment.text
-    fixedMsgs = addText(fixedMsgs, text);
+    messages = addText(messages, text, platformFilter);
   }
 
-  messages.forEach((message, idx) => {
-    const
-      msgType = message.type,
-      msgPlatform = message.platform
-    ;
+  let fixedMsgs = [];
 
-    if (msgType === 1 && includeMsg(platformFilter, msgPlatform)) {
+  messages.forEach((message, idx) => {
+    const msgPlatform = message.platform ? message.platform.toUpperCase() : '';
+    let msgType = message.message;
+
+    if (!msgType) {
+      msgType = getMessageType(message);
+      message.message = msgType;
+    }
+
+    if (msgType === 'card') {
       // card
       // init platform card set
       if (!cards[msgPlatform] || !cards[msgPlatform].length) {
@@ -50,21 +76,19 @@ function getMessages(response, platformFilter) {
       }
       // add card to platform card set
       delete message.platform;
-      delete message.type;
 
-      cards[msgPlatform].push(message);
+      cards[msgPlatform].push(message.card);
     }
-
-    if (idx === lastMessageIdx || msgType !== 1) {
+    if (idx === lastMessageIdx || msgType !== 'card') {
       // this is last message or it is not a card
       // create a cards message for each platform
       for (const platform in cards) {
-        if (includeMsg(platformFilter, platform) && Object.prototype.hasOwnProperty.call(cards, platform)) {
+        if (Object.prototype.hasOwnProperty.call(cards, platform)) {
           // check if there are cards to process
           if (cards[platform].length > 0) {
             // add card set to messages
             fixedMsgs.push({
-              type: 1,
+              message: 'cards',
               platform,
               cards: [].concat(cards[platform])
             });
@@ -74,20 +98,19 @@ function getMessages(response, platformFilter) {
         }
       }
     }
-    switch (msgType) {
-    case 0: // text
-    case 2: // quick replies
-    case 3: // image
-    case 4: // payload
-      // add to outgoing messages
-      if (includeMsg(platformFilter, msgPlatform)) {
+    if (msgType !== 'card') {
+      let add = true;
+      if (msgType === 'text') {
+        // get a single message
+        message.text.text = message.text.text[0];
+        add = !!message.text.text;
+      }
+      if (!Object.prototype.hasOwnProperty.call(message, 'platform')) {
+        message.platform = '';
+      }
+      if (add) {
         fixedMsgs = fixedMsgs.concat(message);
       }
-      break;
-    case 1:
-      // handled above
-      break;
-    default:
     }
   });
   return fixedMsgs;

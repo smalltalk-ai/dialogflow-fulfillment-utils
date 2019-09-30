@@ -6,6 +6,53 @@ const
   utils = require('./utils')
 ;
 
+describe('getMessageType functions', function() {
+  it('should return null when object is null', function(done) {
+    const obj = null;
+    expect(utils.getMessageType(obj)).to.equal(null);
+    done();
+  });
+
+  it('should return null when object is a string', function(done) {
+    const obj = 'foo';
+    expect(utils.getMessageType(obj)).to.equal(null);
+    done();
+  });
+
+  it('should return null when object is empty', function(done) {
+    const obj = {};
+    expect(utils.getMessageType(obj)).to.equal(null);
+    done();
+  });
+
+  it('should return null when object only has platform property', function(done) {
+    const obj = {
+      platform: ''
+    };
+    expect(utils.getMessageType(obj)).to.equal(null);
+    done();
+  });
+
+  it('should return value when object only 1 property', function(done) {
+    const obj = {
+      text: ''
+    };
+    const expected = 'text';
+    expect(utils.getMessageType(obj)).to.equal(expected);
+    done();
+  });
+
+  it('should return value when object only property and platform', function(done) {
+    const obj = {
+      platform: '',
+      card: ''
+    };
+    const expected = 'card';
+    expect(utils.getMessageType(obj)).to.equal(expected);
+    done();
+  });
+});
+
 describe('changeStructProtoToJson functions', function() {
   it('should return null when object is null', function(done) {
     const obj = null;
